@@ -1,0 +1,117 @@
+Versions:
+===========
+ASP.NET CORE : 2.1
+
+
+Add an empty solution with name MicroService.
+
+Add 4 projects (Make sure to Enable Docker Support):
+	.Net Core --> ASP.NET Core Web Application --> API
+
+Project Names:
+	1) Gateway
+	2) OrderService
+	3) UserService
+	4) AggregatorService
+
+Update launchSettings.json for each project repectively to:
+	1) Gateway: 			"applicationUrl": "http://localhost:7000"
+	2) OrderService			"applicationUrl": "http://localhost:7001"
+	3) UserService			"applicationUrl": "http://localhost:7002"
+	4) AggregatorService	"applicationUrl": "http://localhost:7003"
+	
+	
+Create a bat file with name "run-apis.bat" which will launch all the 4 services:
+
+start /d "." dotnet run --project "Gateway/Gateway.csproj"
+start /d "." dotnet run --project "OrderService/OrderService.csproj"
+start /d "." dotnet run --project "UserService/UserService.csproj"
+start /d "." dotnet run --project "AggregatorService/AggregatorService.csproj"
+
+===============================
+API Gateway	- Ocelot - 13.5.1	 	
+===============================
+Doc : https://ocelot.readthedocs.io/en/latest/
+Install the "Ocelot" nuget package in "Gateway" project.
+
+The main functionality of an Ocelot API Gateway is to take incoming HTTP requests and forward them on to a downstream service, currently as another HTTP request. Ocelot's describes the routing of one request to another as a ReRoute.
+
+Now, Add it as middleware. Update Startup.cs file for Gateway project.
+	services.AddOcelot(); in method ConfigureServices();
+	app.UseOcelot().Wait(); in method Configure(....).
+
+Add ocelot.json. This is used to tell Gateway that which request to be routed to which port.
+
+Update Program.cs file to tell that configurations needs to be picked from ocelot.json file as below:
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((host, config) =>
+            {
+                config.AddJsonFile("ocelot.json");
+            }).UseStartup<Startup>();
+
+Update ocelot.json for ReRoutes and GlobalConfigurations:
+
+{
+  // ReRoutes array allows you to define one or more redirects.
+  // The downstream paths represent the paths to the microservices.
+  // The upstream paths represent how the users will access these microservices via the API Gateway.
+  "ReRoutes": [
+    {
+      "DownstreamPathTemplate": "/api/values/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7001
+        }
+      ],
+      "UpstreamPathTemplate": "/orderservice/{catchAll}"
+      //"UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/values/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7002
+        }
+      ],
+      "UpstreamPathTemplate": "/userservice/{catchAll}"
+      //"UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/values/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7003
+        }
+      ],
+      "UpstreamPathTemplate": "/aggregatorservice/{catchAll}"
+      //"UpstreamHttpMethod": [ "Get" ]
+    }
+  ],
+  "GlobalConfiguration": { // GlobalConfiguration allows you to define the BaseUrl that Ocelot is running under..
+    "BaseUrl": "http://localhost:7000"
+  }
+}
+
+Now, run all the 4 apis using the bat file.
+
+Check if apis are running in browser by making calls:
+http://localhost:7001/api/values/1
+http://localhost:7002/api/values/1
+http://localhost:7003/api/values/1
+
+Now, since above urls are not exposed to client and we need to access via api gateway, then they should be accessible as below:
+http://localhost:7000/orderservice/1
+http://localhost:7000/userservice/1
+http://localhost:7000/aggregatorservice/1
+
+Hardcode json for order service and user service. Make rest calls from aggregator service.
+
+
+

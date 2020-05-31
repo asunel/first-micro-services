@@ -1,0 +1,46 @@
+{
+  // ReRoutes array allows you to define one or more redirects.
+  // The downstream paths represent the paths to the microservices.
+  // The upstream paths represent how the users will access these microservices via the API Gateway.
+  "ReRoutes": [
+    {
+      "DownstreamPathTemplate": "/api/values/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7001
+        }
+      ],
+      "UpstreamPathTemplate": "/orderservice/{catchAll}"
+      //"UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/values/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7002
+        }
+      ],
+      "UpstreamPathTemplate": "/userservice/{catchAll}"
+      //"UpstreamHttpMethod": [ "Get" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/values/{catchAll}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 7003
+        }
+      ],
+      "UpstreamPathTemplate": "/aggregatorservice/{catchAll}"
+      //"UpstreamHttpMethod": [ "Get" ]
+    }
+  ],
+  "GlobalConfiguration": { // GlobalConfiguration allows you to define the BaseUrl that Ocelot is running under..
+    "BaseUrl": "http://localhost:7000"
+  }
+}
